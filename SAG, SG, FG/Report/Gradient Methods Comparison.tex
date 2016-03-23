@@ -1,0 +1,533 @@
+%%%%%%   last revised 19/09/14   %%%%%%
+
+\documentclass[12pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage[T2A]{fontenc}
+\usepackage{textcomp}
+\usepackage{a4wide}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{caption}
+\usepackage{subfig}
+\usepackage{hyperref}
+
+\sloppy
+\pagestyle{plain}
+
+\makeatletter
+
+\newcommand{\l@contline}[2]{\hbox to\textwidth{#1\dotfill #2}} %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+\renewcommand{\@begintheorem}[2]{\begin{trivlist}\it
+  \itemindent=\parindent
+  \item[\hspace{\labelsep}{\bf #1\ #2.}]}
+\renewcommand{\@endtheorem}{\end{trivlist}}
+
+\renewcommand{\@biblabel}[1]{#1.\hfill}
+
+\makeatother
+
+\def \theequation {\thesection.\arabic{equation}}
+
+\def \proof{{\bf Доказательство.}}
+\def \endproof{\vskip .5cm}
+
+\newcommand{\newsection}[1]
+{
+    \vspace{4mm}
+    \refstepcounter{section}
+    \setcounter{equation}{0}
+    \begin{center}
+       \bf \Large \thesection. #1
+    \end{center}
+    \addcontentsline{toc}{contline}{\bf \thesection. #1} %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+}
+
+\newcommand{\newsubsection}[1]
+{
+  \bigskip
+  \refstepcounter{subsection}
+  \begin{center}
+     \bf \large \thesubsection. {#1}
+  \end{center}
+  \addcontentsline{toc}{contline}{\hspace{0.5cm}\thesubsection. #1} %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+}
+
+\newcommand{\newsubsubsection}[1]
+{
+  \bigskip
+  \refstepcounter{subsubsection}
+  \begin{center}
+      \bf \thesubsubsection. {#1}
+  \end{center}
+  \addcontentsline{toc}{contline}{\hspace{1.4cm}\thesubsubsection. #1} %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+}
+
+\newtheorem{theorem}{Теорема}%[section]
+\newtheorem{lemma}{Лемма}%[section]
+\newtheorem{corollary}{Следствие}%[section]
+\newtheorem{proposition}{Предложение}%[section]
+\newtheorem{statement}{Утверждение}%[section]
+\newtheorem{definition}{Определение}%[section]
+\newtheorem{algorithm}{Алгоритм}%[section]
+\newtheorem{remark}{Замечание}%[section]
+\newtheorem{example}{Пример}%[section]
+\newtheorem{test}{Тест}%[section]
+
+\newcommand{\ds}{\displaystyle}
+\newcommand{\nn}{\nonumber }
+\newcommand{\dist}{\mathop{\rm dist} }
+\newcommand{\im}{\mathop{\rm im} }
+
+\newcommand{\E}{\mathbb{E}}
+\newcommand{\N}{\mathbb N}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Rs}{\mathbb{R}^s}
+\newcommand{\Rn}{\mathbb{R}^n}
+\newcommand{\Rl}{\mathbb{R}^l}
+\newcommand{\Rm}{\mathbb{R}^m}
+\newcommand{\Rr}{\mathbb{R}^r}
+
+\newcommand{\bs}{\bar \sigma }
+\newcommand{\bx}{\bar x}
+\newcommand{\bl}{\bar \lambda }
+\newcommand{\bm}{\bar \mu }
+\newcommand{\bz}{\bar z}
+\newcommand{\bc}{\bar c}
+\newcommand{\hx}{\hat x }
+\newcommand{\hl}{\hat \lambda }
+\newcommand{\hm}{\hat \mu }
+
+\newcommand{\xlm}{(x,\, \lambda,\, \mu)}
+\newcommand{\bxlm}{(\bx,\, \bl,\, \bm)}
+\newcommand{\xlmk}[1]{(x^{#1},\, \lambda^{#1},\, \mu^{#1})}
+\newcommand{\blm}{(\bl,\, \bm)}
+
+
+\newcommand{\Mbx}{\mathcal M(\bx)}
+\newcommand{\Ahx}{\hat A(\hx)}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\heps}{\hat \eps }
+\newcommand{\bxi}{\bar \xi}
+\newcommand{\hL}{\hat L}
+\newcommand{\es}{\{0\}}
+\newcommand{\T}{^{\rm T}}
+
+\newcommand{\la}{\langle}
+\newcommand{\ra}{\rangle}
+\newcommand{\les}{\leqslant}
+\newcommand{\ges}{\geqslant}
+
+\newcommand{\pder}[2]{\frac{\partial #1}{\partial #2}}
+\newcommand{\pmat}[1]{\begin{pmatrix} #1 \end{pmatrix}}
+\newcommand{\ip}[2]{\la #1 ,\, #2 \ra}
+\newcommand{\maxz}[1]{\max\{0,\, #1\}}
+\newcommand{\iset}[1]{1,\, \ldots,\, #1}
+\newcommand{\iiset}[2]{#1,\, \ldots,\, #2}
+\newcommand{\infnorm}[1]{\| #1 \|_\infty}
+\newcommand{\Infnorm}[1]{\left\| #1 \right\|_\infty}
+
+\newcommand{\tb}{\textbullet}
+\newcommand{\tc}{\textopenbullet}
+\newcommand{\te}{\phantom{\tb}}
+\newcommand{\grp}[2]{\te\llap{#1} / \te\llap{#2}}
+
+\newcommand{\norm}[1]{\| #1 \|}
+\newcommand{\bu}{\bar u}
+\newcommand{\rank}{\mathop{\rm rank}}
+
+%\title{Стохастическая оптимизация. Метод SAG.}
+\date{4 февраля 2015}
+\author{Павел Измаилов}
+
+\begin{document}
+
+\renewcommand{\contentsname}{\centerline{\bf Содержание}} %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+\renewcommand{\refname}{\centerline{\bf Список литературы}}
+
+%\maketitle
+\centerline{Московский государственный университет им. М. В. Ломоносова}
+
+\centerline{Факультет вычислительной математики и кибернетики}
+
+\vspace{5 cm}
+
+\centerline{\Large Отчет по работе на тему}
+
+\vspace{1 cm}
+
+\centerline{\Large \bf Экспериментальное  сравнение методов}
+\centerline{\Large \bf SAG, SG и FG.}
+
+\vspace{6 cm}
+
+\begin{flushright} 
+Выполнил студент 216 группы
+
+Измаилов Павел Алексеевич
+\end{flushright}
+
+\vfill 
+
+\centerline{Москва, 2015}
+\thispagestyle{empty} 
+
+%\pagebreak
+
+\pagebreak
+
+\centerline{\Large \bf Введение}
+\addcontentsline{toc}{contline}{\bf Введение}
+\vspace{0.5cm}
+
+В данной работе мною произведено сравнение трех методов оптимизации --- градиентного спуска (FG), стохастического градиента (SG) и стохастического среднего градиента (SAG) на задачах линейной и логистической регрессии. Работа методов сравнивается на модельных данных а также на наборах данных, расположенных на сайте библиотеки LIBSVM — \url{http://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/}.
+
+\pagebreak
+
+\newsection{Рассматриваемые задачи}
+
+ В данной работе рассматриваются  задачи линейной и логистической регрессии. В случае линейной регрессии целевая функция имеет вид
+$$f(\theta) = \frac {1} {n} \sum_{i = 1}^n \left( y_i - x_i \theta^T \right)^2,$$
+а в случае логистической регрессии 
+$$f(\theta) = \frac 1 n \sum_{i = 1}^n \ln \left(1 + e^{-y_i x_i \theta^T} \right)^2 + \frac \gamma 2 \|\theta\|^2.$$
+Здесь $y_i \in \R^n$ и $x_i \in \R^{(m, n)}$ , $\gamma > 0$ — фиксированные вектор, матрица и число соответственно. 
+
+С более общей точки зрения, рассматривается задача оптимизации с целевой функцией, представляющей собой сумму большого числа выпуклых функций:
+	$$f(\theta) = \frac 1 n \sum_{i = 1}^n f_i(\theta) + \frac \gamma 2 \norm{\theta}^2,$$
+где все функции $f_i$ выпуклы, $\theta \in \R^m$, а $\gamma$ — некоторая неотрицательная константа. 
+
+\newsection{Рассматриваемые методы}
+В данной работе рассматриваются следующие методы:
+\begin{itemize}
+	\item FG (Full Gradient) — метод градиентного спуска.  Итерация этого метода имеет вид
+	$$ \hat\theta_{k+1} = \hat\theta_k - \alpha_k f'(\hat\theta_k).$$
+	В качестве правила выбора длины шага используется правило Армихо.
+	
+	\item SG (Stochastic Gradient) — метод стохастического градиента.  Итерация этого метода имеет вид
+	$$ \hat\theta_{k+1} = \hat\theta_k - \alpha_k f_i'(\hat\theta_k),$$
+	где индекс $i$ выбирается случайно. В качестве правила выбора длины шага используется правило вида $$ \alpha_k = \frac {\alpha_0} {k^{0.5 + \delta}}.$$ Параметры $\alpha_0$ и $\delta$ выбирается вручную так, чтобы работа метода была наилучшей.
+	
+	\item SAG (Stochastic Average Gradient)— метод стохастического среднего градиента. Итерации метода SAG имеют следующий вид:
+	$$\hat\theta_{k+1} = \hat\theta_{k} - \frac {\alpha_k}{n} \sum_{i = 1}^{n}y^i_{k},$$
+	где на каждой итерации индекс $i_k$ выбирается случайным образом из набора $[1, \ldots, n]$, и
+	$$y^i_k = \left \{ 
+	\begin{matrix} 
+	 f_i'(\hat\theta_{k}) , \mbox{ если } i = i_k 
+	\\ y^i_{k-1}  , \mbox{ иначе} .\\ 
+	\end{matrix} \right.$$
+	
+	В качестве длины шага используется $\alpha_k = \frac 1 \ell$, где $\ell$ — оценка константы Липшица целевой функции. Эта оценка обновляется на каждой итерации по следующему правилу: если нарушается неравенство 
+	$$f_{i_k}(\hat\theta_{k} - \frac {1} {\ell^k} f_{i_k}'(\hat\theta_{k})) \le f_{i_k}(\hat\theta_{k}) - \frac{1}{2\ell^k} || f_{i_k}' (\hat\theta_{k}) ||^2,$$
+	то $\ell^k$ удваивается до тех пор, пока неравенство не начнет выполняться.
+	
+%	\item MISO (Minimizing by Incremental Surrogate Optimization) — метод, использующий суррогатные функции. Итерация этого метода имеет вид
+%	$$ \theta_n = \arg \min\limits_{\theta \in \R^p} \frac 1 n \sum_{i = 1}^n g_n^i (\theta),$$
+%	где на каждой итерации индекс $i_k$ выбирается случайным образом из набора $[1, \ldots, n]$, и
+%	$$g^i_k (\theta) = \left \{ 
+%	\begin{matrix} 
+%	&f_i(\hat\theta_{k-1}) + f_i' (\hat\theta_{k-1})^T (\theta - \hat\theta_{k-1}) + \frac \ell 2 \norm{\theta -\hat\theta_{k-1}}^2 \mbox{, если } i = i_k 
+%	\\ &g^i_{k-1} (\theta) , \mbox{ иначе} .\\ 
+%	\end{matrix} \right.$$
+%	Для выбора длины шага метода MISO (то есть для оценки постоянной Липшица) перед выполнением метода производится перебор нескольких значений, среди которых выбирается лучшее по результатам одного прохода по выборке.
+\end{itemize}
+
+Все методы реализованы на языке Python.
+
+Чтобы сделать сравнение по времени работы более честным, методы SG и SAG реализованы с использованием вычислений сериями — на каждой итерации этих методов вычисляется градиент не для одного слагаемого, а для суммы нескольких слагаемых. Это решение связано с тем, что в языке Python использование векторных вычислений позволяет значительно ускорить работу методов. В случае отказа от вычислений сериями метод FG побеждает методы SG и SAG по времени работы практически всегда. Размеры серий выбираются так, чтобы скорость работы методов была оптимальной.
+
+\pagebreak
+\newsection {Экспериментальные результаты}
+В этом разделе приводятся результаты работы методов на различных наборах данных. Методы сравниваются по эпохам (сравнивается значение целевой функции после каждого прохода методов по набору данных) и по времени работы (сравниваются результаты работы методов за равные промежутки времени). В каждом случае методы запускается с ограничением на максимальное число итераций, и достижение этого максимального числа является критерием остановки (другие правила остановки не используются, так как они оказали бы влияние на время работы методов). 
+
+\newsubsection{Модельные данные}
+В данном разделе методы сравниваются на модельных данных, сгенерированных программным образом.
+
+\newsubsubsection{Линейная регрессия}
+Здесь будет рассмотрена работа методов на задаче линейной регрессии с данными, сгенерированными программным образом. Данные генерируются следующим образом:
+\begin{enumerate}
+	\item Генерируется случайный массив $X \in \R^{n, m}$, этот массив отшкалирован так, что все его элементы лежат в заданном интервале. 
+	\item К массиву $X$ приписывается столбец, состоящий из единиц.
+	\item Генерируется значение $\theta \in \R^m$.
+	\item По $X$ и $\theta$ вычисляется вектор $y = X \theta^T + \varepsilon$, где $\varepsilon$ — случайный шум.
+\end{enumerate}
+
+Таким образом, у этой задачи два параметра: количество данных $n$ и размерность задачи $m$.
+
+Для данной задачи получены следующие результаты.
+\begin{itemize}
+	\item  $n$ порядка не превосходящего $10^4$. В этом случае размер серий, которыми оперируют стохастические методы (при меньших размерах сравнение по времени теряет смысл). 
+	
+	Даже несмотря на использование вычислений сериями итерация метода FG происходит значительно быстрее, чем итерация SAG, потому что значение $n$ мало. Итерация метода SG также происходит несколько быстрее метода SAG. В результате (см. рис. \ref{lr_1_1e4}) в сравнении по времени на ранних эпохах лучше всех показывает себя метод SG. Довольно скоро его обгоняет FG, который затем так и остается в лидерах. Метод SAG через какое-то время обгоняет SG и имеет скорость сходимости близкую к FG. 
+	
+	В сравнении по эпохам на ранних эпохах лидирует метод SG, затем его обгоняет SAG.
+	
+	Таким образом, при малых объемах данных метод на ранних эпохах при правильном выборе длины шага выигрывает метод SG, но вскоре FG и SAG вырываются вперед. Они имеют приблизительно равную скорость сходимости по времени работы, а по эпохам SAG существенно выигрывает.
+	
+	При возрастании размерности задачи $m$ FG постепенно теряет преимущество перед SAG, заключающееся в более быстрой эпохе. Это приводит к тому (см. рис. \ref{lr_100_1e4}), что метод SAG начинает работать быстрее FG и SG. Однако достигнув определенного предела методы фактически перестают продвигаться в сторону решения. 
+		
+	\item $n$ порядка $10^5$ и более. При увеличении размеров выборки соотношение производительности методов по эпохам в общем сохраняется. Однако FG теряет преимущество в скорости на каждой итерации, которое он имел при меньших размерах выборки. В результате (см. рис. \ref{lr_1_1e5}, \ref{lr_10_1e6}) SAG все более явно выигрывает у FG. Кроме того, FG требуется все больше итераций, чтобы догнать SG.
+\end{itemize}
+
+\begin{figure}[!t]
+	\centering
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{linreg_it_(1,1e4).png}
+		}
+	}
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{linreg_t_(1,1e4).png}
+		}
+	}
+	\caption{Линейная регрессия, $n =10^4, m = 1$}
+	\label{lr_1_1e4}
+\end{figure}
+\begin{figure}[!t]
+	\centering
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{linreg_it_(100,1e4).png}
+		}
+	}
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{linreg_t_(100,1e4).png}
+		}
+	}
+	\caption{Линейная регрессия, $n =10^4, m = 100$}
+	\label{lr_100_1e4}
+\end{figure}
+
+\begin{figure}[!h]
+	\centering
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{linreg_it_(1,1e5).png}
+		}
+	}
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{linreg_t_(1,1e5).png}
+		}
+	}
+	\caption{Линейная регрессия, $n =10^5, m = 1$}
+	\label{lr_1_1e5}
+\end{figure}
+\begin{figure}[!h]
+	\centering
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{linreg_it_(10,1e6).png}
+		}
+	}
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{linreg_t_(10,1e6).png}
+		}
+	}
+	\caption{Линейная регрессия, $n =10^6, m = 10$}
+	\label{lr_10_1e6}
+\end{figure}
+
+Таким образом, при малых объемах данных $n$ для данной задачи целесообразно использовать метод FG, хотя метод SAG показывает себя не многим хуже (при использовании вычислений сериями). При увеличении размеров выборки $n$ или размерности задачи $m$ метод SAG быстро обгоняет FG, а SG становится лучше FG на ранних эпохах.
+
+\pagebreak
+\newsubsubsection{Логистическая регрессия}
+
+В этом разделе будет рассмотрена работа методов на задаче логистической регрессии с данными, сгенерированными программным образом. Данные генерируются следующим образом:
+\begin{enumerate}
+	\item Генерируется случайный массив $X \in \R^{(n, m)}$, этот массив отшкалирован так, что все его элементы лежат в заданном интервале. 
+	\item К этому массиву добавляется столбец, заполненный единицами.
+	\item Генерируется значение $\theta \in \R^m$.
+	\item По $X$ и $\theta$ вычисляется вектор $y = \mbox{sgn}(X \theta^T)$.
+\end{enumerate}
+Таким образом, у данной задачи, как и у рассмотренной ранее задачи линейной регрессии, два параметра — объем выборки $n$ и размерность задачи $m$.
+
+Рассуждения в общем совпадают с рассуждениями, приведенными в предыдущем пункте, поэтому ограничимся здесь графиками по времени работы (см. рис. \ref{lgr_2,10_1e4}, \ref{lgr_1_1e5,1e6}). 
+
+Основное отличие между этой задачей и задачей линейной регрессии заключается в том, что в данном случае целевая функция является сильно выпуклой. В этом случае теоретическая оценка скорости сходимости метода SAG лучше, чем в общем случае.
+
+\begin{figure}[!h]
+	\centering
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{logreg_t_(2,1e4).png}
+		}
+	}
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{logreg_t_(10,1e4).png}
+		}
+	}
+	\caption{Логистическая регрессия, $n =10^4, m = 2$ и $m = 10$}
+	\label{lgr_2,10_1e4}
+\end{figure}
+\begin{figure}[t]
+	\centering
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{logreg_t_(2,1e5).png}
+		}
+	}
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{logreg_t_(2,1e6).png}
+		}
+	}
+	\caption{Логистическая регрессия, $n =10^5$ и $n = 10^6$, $m = 2$}
+	\label{lgr_1_1e5,1e6}
+\end{figure}
+
+\pagebreak
+\newsubsection{Наборы данных небольших размеров}
+
+В этом разделе рассматриваются результаты работы методов на наборах данных небольших объемов — порядка $10^3$ точек.
+
+\newsubsubsection{Набор данных Fourclass}
+
+Данный набор данных предназначен для задачи классификации, он состоит из $n = 861$ точки в $m = 2$-мерном пространстве. 
+
+\begin{figure}[h]
+	\centering
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{fourclass_it.png}
+		}
+	}
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{fourclass_t.png}
+		}
+	}
+	\caption{Набор данных fourclass, $n =861$, $m = 2$}
+	\label{fourclass}
+\end{figure}
+
+Графики, приведенные на рис. \ref{fourclass} построены для методов SG и SAG, использующих вычисления сериями, размеры которых составляют порядка 5\% объема данных. Видно, по времени ожидаемо выигрывает метод FG, а метод SAG показывает себя неожиданно плохо — SAG и SG показали примерно одинаковые результаты. По эпохам FG также обгоняет SG и SAG, а SG и SAG показывают схожие результаты. 
+
+В случае отказа от вычислений сериями (см. рис. \ref{fourclass_nobatch}) SAG в сравнении по эпохам показывает себя лучше, однако по времени работы проигрывает существенно сильнее.
+
+\begin{figure}[h]
+	\centering
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.5\textwidth]{fourclass_nobatch.png}
+		}
+	}
+	\caption{Набор данных fourclass без использования вычислений сериями $n =861$, $m = 2$}
+	\label{fourclass_nobatch}
+\end{figure}
+
+Таким образом, на данном наборе данных при использовании вычислений сериями SAG показывает себя неожиданно плохо. %Это может быть связано с тем, что точки в данной задаче плохо разделяются прямой.
+
+\newsubsubsection{Набор данных Australian}
+Данный набор данных состоит из $n = 690$ точек в $m = 14$-мерном пространстве и предназначен для задачи классификации.
+
+
+\begin{figure}[h]
+	\centering
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{australian_it.png}
+		}
+	}
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{australian_t.png}
+		}
+	}
+	\caption{Набор данных Australian, $n = 690$, $m = 14$}
+	\label{australian}
+\end{figure}
+
+Результаты работы методов приведены на рис. \ref{australian}. Видно, что SAG ожидаемо выигрывает у FG как по эпохам, так и по времени. По времени на ранних эпохах лидирует SG, но затем его обгоняют как SAG, так и FG.
+
+\newsubsubsection{Набор данных Abalone}
+Данный набор данных состоит из $n = 4177$ точек в $m = 8$-мерном пространстве, и предназначен для задачи регрессии. Результаты работы методов приведены на рис.~\ref{abalone}
+ 
+\begin{figure}[h]
+	\centering
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{abalone_it.png}
+		}
+	}
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{abalone_t.png}
+		}
+	}
+	\caption{Набор данных Abalone, $n = 4177$, $m = 8$}
+	\label{abalone}
+\end{figure}
+
+Таким образом, мы видим, что на данной задаче регрессии методы качественно ведет себя так же, как и на модельных задачах.  На ранних эпохах хорошо себя показывает SG, но вскоре уступает FG и SAG. SAG побеждает FG как по эпохам, так и по времени.
+
+\newsubsection{Наборы данных средних размеров}
+
+В этом разделе рассматриваются результаты работы методов на наборах данных средних объемов — порядка $10^4$ – $10^5$ точек.
+
+\newsubsubsection{Набор данных IJCNN1}
+
+Данный набор данных состоит из $n = 49990$ точек в $m = 22$-мерном пространстве, и предназначен для задачи классификации. При таких размерах данных метод SAG начинает существенно выигрывать у FG по времени за счет более быстрых эпох. На данном наборе данных в качестые размера серии для методов SG и SAG использовалось 5\% от $n$. Из графиков (см. рис. \ref{ijcnn}) видно, что при таких размерах данных SAG значительно обыгрывает FG и лишь на первых эпохах уступает SG. FG же после первых нескольких эпох обгоняет SG.
+
+\begin{figure}[h]
+	\centering
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{ijcnn_it.png}
+		}
+	}
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{ijcnn_t.png}
+		}
+	}
+	\caption{Набор данных IJCNN1, $n = 49990$, $m = 22$}
+	\label{ijcnn}
+\end{figure}
+
+\pagebreak
+
+\newsubsubsection{Набор данных mnist}
+Данный набор данных состоит из $n = 60000$ точек в $m = 780$-мерном пространстве, и предназначен для задачи классификации. Результаты работы методов приведены на рис. \ref{mnist}.
+
+\begin{figure}[h]
+	\centering
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{mnist_it.png}
+		}
+	}
+	\subfloat{
+		\mbox{
+                		\includegraphics[width=0.45\textwidth]{mnist_t.png}
+		}
+	}
+	\caption{Набор данных mnist, $n = 60000$, $m = 780$}
+	\label{mnist}
+\end{figure}
+
+Как видно из графиков, на ранних эпохах лидирует метод SG, но почти сразу он перестает прогрессировать. Метод SAG быстро обгоняет SG и FG как по времени, так и по эпохам. Метод FG после нескольких итераций догоняет SG, но обогнать его не может.
+
+\pagebreak
+\newsubsection{Выводы}
+
+Из проведенных экспериментов можно заключить следующее:
+\begin{itemize}
+	\item При малой размерности задач и малых объемах данных методы FG и SAG показывают близкую производительность. Это обусловлено в частности тем, что  при малых размерах данных из-за особенностей языка Python, итерация метода FG происходит приблизительно так же быстро, как итерация метода SAG. В то же время итерация метода SAG примерно так же информативна, как и итерация FG, потому что из-за небольшого количества данных градиенты не успевают сильно устареть.
+	
+	\item При повышении размерности задачи при малых объемах данных все методы ведут себя хуже, чем в случае малых размерностей. Методы SAG и FG ведут себя сходным образом. Во многом это диктуется тем, что итерации методов SAG и FG близки по информативности и трудоемкости, так как последняя определяется в большей степени размерностью задачи, а не количеством рассматриваемых на каждой итерации функций. Метод SG неплохо проявляет себя на ранних итерациях, но быстро перестает прогрессировать.
+	
+	\item При возрастании объема данных метод SAG начинает существенно выигрывать у SG и FG. Это обусловлено тем, что объем серии, используемой при обновлении градиента в методах SAG и SG можно подобрать так, чтобы соотношение времени работы одной итерации и ее информативности было оптимальным, в то время как итерации FG становятся слишком долгими. Метод SG снова хорошо показывает себя на ранних итерациях, но SAG быстро его обгоняет. FG также обгоняет SG засчет линейной скорости сходимости, но происходит это не сразу, и при больших объемах данных в выборе между этими двумя методами может иметь смысл выбирать SG. 
+	
+	
+\end{itemize}
+
+
+\end{document}
