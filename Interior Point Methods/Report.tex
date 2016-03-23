@@ -1,0 +1,627 @@
+\documentclass[12pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[russian]{babel}
+\usepackage[T2A]{fontenc}
+\usepackage{textcomp}
+\usepackage{a4wide}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+\usepackage{caption}
+\usepackage{subfig}
+\usepackage{listings}
+\usepackage{hyperref}
+%\usepackage{fontspec}
+\usepackage{pgfplots}
+\usepackage{tikz}
+
+\lstset{
+language=Python,
+basicstyle=\ttfamily\small,
+otherkeywords={self},                   
+}
+
+\title{Title}
+\title{Неточный метод Ньютона.}
+\date{4 октября 2015}
+\author{Павел Измаилов}
+
+\begin{document}
+
+\renewcommand{\contentsname}{\centerline{\bf Содержание}} %!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+\newcommand{\norm}[1]{||#1||}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\scalarprod}[2]{\langle #1, #2 \rangle}
+\newcommand{\sgn}{\mbox{sgn}}
+\newcommand{\diag}{\mbox{diag}}
+
+\renewcommand{\refname}{\centerline{\bf Список литературы}}
+
+\newlength{\arrayrulewidthOriginal}
+\newcommand{\Cline}[2]{%
+  \noalign{\global\setlength{\arrayrulewidthOriginal}{\arrayrulewidth}}%
+  \noalign{\global\setlength{\arrayrulewidth}{#1}}\cline{#2}%
+  \noalign{\global\setlength{\arrayrulewidth}{\arrayrulewidthOriginal}}}
+
+
+\def\vec#1{\mathchoice{\mbox{\boldmath$\displaystyle#1$}}{\mbox{\boldmath$\textstyle#1$}} {\mbox{\boldmath$\scriptstyle#1$}} {\mbox{\boldmath$\scriptscriptstyle#1$}}}
+
+%\maketitle
+\centerline{Московский государственный университет им. М. В. Ломоносова}
+
+\centerline{Факультет вычислительной математики и кибернетики}
+
+\vspace{5 cm}
+
+\centerline{\Large Отчет по заданию}
+
+\vspace{1 cm}
+
+\centerline{\Large \bf Методы оптимизации для}
+\centerline{\Large \bf для $L_1$-регуляризованной линейной регрессии}
+
+\vspace{6 cm}
+
+\begin{flushright} 
+Выполнил студент 317 группы
+
+Измаилов Павел Алексеевич
+\end{flushright}
+
+\vfill 
+
+\centerline{Москва,  5 ноября 2015}
+\thispagestyle{empty} 
+\pagebreak
+
+\tableofcontents
+\pagebreak
+
+\section{Описание проделанной работы}
+
+	\hspace{0.6cm}В данном отчете содержатся результаты экспериментов, проведенных мной в соответствии со вторым заданием по спецкурсу <<методы оптимизации в машинном обучении>>, а также вывод всех требуемых формул. Мной были реализованы прямой метод барьерных функций, прямо-двойственный метод и проксимальный метод для задачи $L_1$-регуляризованной логистической регрессии. Для обоих методов внутренней точки (прямой метод и прямо-двойственный метод) был предложен способ эффективного решения системы уравнений для выбора очередного направления оптимизации.
+	
+	\section{Рассматриваемая задача и ее эквивалентные формулировки}
+	
+	\hspace{0.6cm}В данной работе сравниваются результаты работы различных методов оптимизации на задаче $L_1$-регуляризованной линейной регрессии. Целевая функция этой задачи имеет вид
+	\begin{equation} \label{loss}
+		F(w) = \frac 1 2 \norm{t - X w}^2 + \lambda \norm{ w}_1,
+	\end{equation}
+	где $(X, t) = \{x_n, t_n\}_{n = 1}^{N}$ — набор данных, $x_n \in \R^D$ — вектор признаков $n$-го объекта, $t_n \in \R$ — значение неизвестной функции (которую требуется приблизить) на этом объекте, $w \in \R^D$ — вектор весов, $\lambda \ge 0$.
+
+	\subsection{Эквивалентная формулировка задачи и двойственная задача}
+		Рассмотрим следующую эквивалентную формулировку рассматриваемой задачи.
+		\begin{equation}\label{loss_2}
+			\begin{array}[l]{c}
+				\frac 1 2 z^T z  + \lambda \norm{w}_1 \rightarrow \min\limits_{z, w}, \\
+				Xw - t = z.
+			\end{array}
+		\end{equation}
+		Данная задача является негладкой задачей выпуклой оптимизации. Выведем двойственную к ней задачу.
+		
+		Функция Лагранжа данной задачи имеет вид
+		$$L(z, w, \mu) = \frac 1 2 z^T z  + \lambda \norm{w}_1 + \scalarprod{\mu}{Xw - t - z}.$$
+		Минимизируем эту функцию по переменной $z$. Заметим, что по переменной $z$ функция $L(z, w, \mu)$ квадратична, причем матрица квадратичной формы положительно определена (это единичная матрица). Поэтому у нее существует единственный минимум при фиксированных $\mu, w$ в точке $z$, где градиент по $\nabla_z L(z, w, \mu) = 0$.
+		$$0 = \nabla_z(L(z, w, \mu)) = z - \mu \Rightarrow z = \mu.$$
+		
+		Теперь проведем минимизацию по переменной $w$. Заметим, что функцию $L$ можно переписать в виде 
+		$$L(z, w, \mu) = \lambda \norm{w}_1 + \scalarprod{\mu}{Xw} + \varphi(z, \mu) = $$
+		$$ = \sum_{d = 1}^D (\lambda |w_d| + c_d w_d) + \varphi(z, \mu),$$
+		где $c = X^T \mu$, $\varphi(z, \mu)$ — некоторая функция от $z$ и $\mu$. Если найдется такой индекс $d$, что $|c_d| > \lambda$, то для вектора $w = (0, 0, \ldots, 0, k, 0, \ldots, 0)$, в котором только $n$-ый элемент отличен от нуля будем иметь
+		$$L(z, w, \mu) = \lambda |k| + c_n k + \varphi(z, \mu).$$
+		Эта функция не ограничена снизу, т.к. при $\mbox{sgn}(k) = -\mbox{sgn}(c_n)$ имеем
+		$$L(z, w, \mu) = |k|(\lambda - |c_n|) + \varphi(z, \mu) \longrightarrow_{|k| \rightarrow \infty} -\infty.$$
+		Если же $\lambda \ge \norm{X^T \mu}_\infty$, то имеем 
+		$$L(z, w, \mu) = \sum_{d = 1}^D (\lambda |w_d| + c_d w_d) + \varphi(z, \mu) \ge \varphi(z, \mu) = L(z, 0, \mu).$$
+		Таким образом, минимум по переменной $w$ достигается при $w = 0$. 
+		
+		Отметим, что $\frac 1 2 \mu^T \mu + \scalarprod{\mu}{-t - \mu} = - \frac 1 2 \mu^T \mu - \mu^T t$.
+		
+		Итак, двойственная задача имеет вид
+		\begin{equation}\label{dual}
+			\begin{array}[l]{c}
+			- \frac 1 2 \mu^T \mu - \mu^T t \rightarrow \max\limits_{\mu},\\
+			\norm{X^T \mu}_\infty \le \lambda.
+			\end{array}
+		\end{equation}
+	
+	\subsubsection{Связь решений прямой и двойственной задачи}
+	
+		Выведем формулы, выражающие связь между решениями прямой задачи \ref{loss_2} и двойственной задачи \ref{dual}.
+		
+		Заметим, что в прямой задаче все ограничения имеют вид линейных равенств. При таких ограничениях значения двойственной и прямой задачи совпадают, причем если $\mu^*$ — решение двойственной задачи, то найдутся такие $z^*, w^*$, что $L(z^*, w^*, \mu^*) = \inf\limits_{z, \mu} L(z, w, \mu^*)$, и $z^*, w^*$ — решение прямой задачи.
+		
+		Итак, пусть $\mu^*$ — решение двойственной задачи. Из вывода двойственной задачи видно, что мы имеем следующие ограничения на $z, w$:
+		\begin{equation}\label{primaldualvariables}
+		\left \{ \begin{array}[l]{l}
+		z = \mu \\
+		w_d = 0, \hspace{0.2cm}\forall d : |c_d| < \lambda\\
+		\sgn(w_d) \ne \sgn(c_d), \hspace{0.2cm} \forall d : |c_d| < \lambda\\
+		Xw - t = z
+		\end{array}
+		\right.
+		\end{equation}
+	Эта система и выражает зависимость, связывающую решения прямой и двойственной задачи.
+	
+	
+	\subsection{Эквивалентная формулировка в виде задачи гладкой условной оптимизации}
+		Выпишем еще одну эквивалентную формулировку задачи \ref{loss}. 
+		\begin{equation}\label{smooth}
+		\begin{array}[l]{c}
+			\frac 1 2 \norm{t - Xw}^2 + \sum\limits_{d = 1}^D u_d \rightarrow \min\limits_{w, u},\\
+			-u_d \le w_d \le u_d, \hspace{0.1cm}\forall d= 1, \ldots, D, \\
+			u_d \ge 0, \hspace{0.1cm}\forall d = 1, \ldots, D.
+			
+		\end{array}
+		\end{equation}
+ 		Данная задача является гладкой задачей условной оптимизации.
+
+	\subsection{Оценка на зазор между решениями прямой и двойственной задачи}
+		Вернемся к задачам  \ref{loss_2} и \ref{dual}. Пусть $w^*, z^*$ — решение прямой задачи, а $\mu^*$ — соответствующие множители Лагранжа. Как было показано выше, $X w^* - t = z^* = \mu^*$. Рассмотрим точку 
+		\begin{equation} \label{mu}
+			\hat\mu(w) = \frac {\lambda (Xw - t)} {\norm{X^T(X w - t)}}_\infty.
+		\end{equation}
+		
+		Отметим, что при любом значении $w$ данная точка является допустимой в двойственной задаче. Покажем, что если $\norm{X^T t}_{\infty} > \lambda$, то выполняется $\hat\mu(w^*) = \mu^*$.
+		
+		Заметим, что максимум квадратичной формы 
+		$$- \frac 1 2 \mu^T \mu - \mu^T t$$
+		достигается при $\mu = -t$. 
+		
+		%Если $-t$ — допустимая точка в двойственной задаче, то $\norm{X^T t} \le \lambda$, а решение прямой задачи $z = -t$ и $w = 0$. При этом по формуле \ref{mu} будем иметь $\hat\mu = \lambda \cfrac {-t} {\norm{X^T t}_\infty}$.
+		
+		Но $-t$ не является допустимой точкой, так как иначе выполнялось бы $\norm{X^T t}_{\infty} \le \lambda$. Следовательно, градиент целевой функции не обращается в $0$ внутри допустимого множества, поэтому оптимальное значение $\mu^*$ лежит на границе этого множества, т.е. $\norm{X^T \mu^*}_\infty = \lambda$. Подставим $w = w^*$ в формулу $\ref{mu}$.
+		$$\hat\mu(w^*) =  \frac {\lambda (Xw^* - t)} {\norm{X^T(X w^* - t)}}_\infty =  \mu^*\frac {\lambda} {\norm{X^T\mu^*}}_\infty = \mu^*.$$
+		
+		Итак $\hat\mu(w^*) = \mu^*$. При этом заметим, что отображение $\hat\mu$ непрерывно, то есть
+		$$\lim_{w \rightarrow w^*} \hat\mu(w) = \mu^*.$$
+		Последнее соотношение позволяет построить следующую оценку на невязку в прямой задаче, которая будет использоваться в критериях останова для методов, описываемых ниже.
+		\begin{equation}\label{estimate}
+		F(w) - F(w^*) \le \frac 1 2 \norm{t - X w}^2 + \lambda \norm{w}_1 + \frac 1 2 \mu^T \mu + \mu^T t.
+		\end{equation}
+
+		
+\pagebreak
+\section{Рассматриваемые методы}
+	В данном разделе приводятся краткие описания рассматриваемых методов оптимизации.
+	
+	\subsection{Прямой метод барьерных функций}
+		Прямой метод барьерных функций применяется к задаче \ref{smooth}. В этом методе ограничения-неравенства заменяются на логарифмические штрафные функции, которые прибавляются к целевой функции.
+		\begin{equation}\label{primal_loss}
+		F_\tau (w, u) = \frac 1 2 \norm{t - Xw}^2 + \lambda \sum\limits_{d = 1}^D u_d - \frac 1 \tau \sum_{d=1}^D \log(u_d - w_d) - \frac 1 \tau \sum_{d=1}^D \log(u_d + w_d) \rightarrow \min_{u, w}.
+		\end{equation}
+		Будем решать эту задачу методом Ньютона. Вычислим градиент.
+		$$\nabla_w F_\tau(w, u) = - X^T t + X^T X w + \frac 1 \tau \frac 1 {u - w} - \frac 1 \tau \frac 1 {u + w},$$
+		$$\nabla_u F_\tau(w, u) = [\lambda, \lambda, \ldots, \lambda]^T - \frac 1 \tau \frac 1 {u - w} - \frac 1 \tau \frac 1 {u + w},$$
+		где $\frac 1 {u - w} = \left[\frac 1 {u_1 - w_1}, \ldots, \frac 1 {u_D - w_D}\right]^T$, $\frac 1 {u + w} = \left[\frac 1 {u_1 + w_1}, \ldots, \frac 1 {u_D + w_D}\right]^T$.
+		
+		Теперь вычислим Гессиан. Обозначим 
+		$$A = \frac 1 \tau \left [
+		\begin{array}[l]{cccc}
+			\frac 1 {(u_1 - w_1)^2} + \frac 1 {(u_1 + w_1)^2}& 0 &\ldots & 0 \\
+			0 & \frac 1 {(u_2 - w_2)^2} + \frac 1 {(u_2 + w_2)^2} &\ldots & 0 \\
+			0 &\ldots & \ddots  & 0\\
+			0 & 0 & \ldots & \frac 1 {(u_D - w_D)^2} + \frac 1 {(u_D + w_D)^2}\\
+		\end{array} \right ], $$
+		$$B = \frac 1 \tau \left [
+		\begin{array}[l]{cccc}
+			\frac 1 {(u_1 + w_1)^2} - \frac 1 {(u_1 - w_1)^2}& 0 &\ldots & 0 \\
+			0 & \frac 1 {(u_2 + w_2)^2} - \frac 1 {(u_2 - w_2)^2} &\ldots & 0 \\
+			0 &\ldots & \ddots  & 0\\
+			0 & 0 & \ldots & \frac 1 {(u_D + w_D)^2} - \frac 1 {(u_D - w_D)^2}\\
+		\end{array} \right ].
+		$$
+		Тогда Гессиан 
+		\begin{equation}\label{primal_hessian}
+		\nabla^2 F_\tau(w, u) = \left [
+		\begin{array}[l]{cc}
+			X^T X  + A & B\\
+			B & A
+		\end{array} \right ].
+		\end{equation}
+		
+		Шаг метода имеет вид
+		$$\theta_{n+1} = \theta_n - \alpha_n \nabla^2 F_\tau(\theta_n)^{-1} \nabla F_\tau(\theta_n),$$
+		где $\theta_n = (w_n, u_n)$ — приближение, полученное методом на $n$-ой итерации.
+		Параметр длины шага $\alpha_n$ подбирается исходя из правила Армихо и ограничений $|w| \le |u|$, $u \ge 0$. В качестве начального приближения используется $w = [0, \ldots, 0]^T$, $u = [1, \ldots, 1]^T$.gr
+		
+		Опишем схему метода.
+		\begin{enumerate}
+			\item Выбираем начальное значение параметра $\tau$, а также значение параметра $\nu$.
+			
+			\item Для заданного $\tau$ решаем задачу оптимизации \ref{primal_loss}. 
+			\begin{enumerate}
+				\item Выбираем начальное приближение $\theta_0 = (w_0, u_0) $, являющееся внутренней точкой для допустимого множества задачи \ref{smooth}. Полагаем $k = 0$.
+				
+				\item Вычисляем очередное направление оптимизации, решая систему
+				\begin{equation}\label{primal_method_ls}
+					\nabla^2 F_\tau(w_k, u_k) d_k = \nabla F_\tau(w_k, u_k).
+				\end{equation}
+				Эффективный способ решения этой системы будет описан ниже.
+				
+				\item Выбираем длину шага $\alpha_k$, удовлетворяющую правилу Армихо, с помощью процедуры backtracking.
+				
+				\item Обновляем приближение 
+				$$\theta_{k+1} = \theta_k - \alpha_k d_k.$$
+				
+				\item Проверяем выполнение условия $\norm{\nabla F_\tau(w_{k+1}, u_{k+1})} < \varepsilon_{center}$. Если оно выполняется, то кладем $w_{\tau} = w_k$ и переходим к пункту 3. Иначе увеличиваем значение $k$ на $1$ и переходим к пункту (b).
+			\end{enumerate}
+			
+			\item Проверяем выполнение условия 
+			$$\frac 1 2 \norm{t - X w_\tau}^2 + \lambda \norm{w_\tau}_1 + \frac 1 2 \hat\mu(w_\tau)^T \hat\mu(w_\tau) + \hat\mu(w_\tau)^T t < \varepsilon_{gap}, $$
+			где $\hat\mu(\cdot)$ — отображение, определенное в \ref{mu}  (см. оценку \ref{estimate}). Если оно выполняется, то устанавливаем $w_{opt} = w_\tau$ и останавливаем работу метода. Иначе, увеличиваем $\tau$ в $\nu$ раз и переходим к пункту 2.
+ 		\end{enumerate}
+		
+		\subsubsection{Эффективный метод решения системы \ref{primal_method_ls}}
+			
+			Воспользуемся дополнением Шура для построения матрицы, обратной, к $\nabla^2 F_\tau(w)$. В результате получим 
+			$$
+			\nabla^2 F_\tau(w)^{-1} = 
+			\left[
+			\begin{array}[l]{cc}
+				S^{-1} & -S^{-1} B A^{-1}\\
+				- A^{-1} B S^{-1} & A^{-1} + A^{-1} B S^{-1} B A^{-1} 
+			\end{array}
+			\right],
+			$$
+			где $S$ — дополнение по Шуру $\nabla^2 F_\tau / A$:
+			$$S = X^T X + A - B A^{-1} B.$$
+			
+			Рассмотрим теперь произведение 
+			\begin{equation}\label{primal_direction}
+			\nabla^2 F_\tau(w)^{-1}  
+			\left [
+			\begin{array}[l]{c}
+				dw\\
+				du
+			\end{array}
+			\right ] = 
+			\left [
+			\begin{array}[l]{c}
+				S^{-1} dw - S^{-1} B A^{-1} du\\
+				-A^{-1} B S^{-1} dw + A^{-1} du  + A^{-1} BS^{-1} B A^{-1} du
+			\end{array}
+			\right ].
+			\end{equation}
+			Здесь через $dw, du$ обозначены соответственно $\nabla_w F_\tau(w, u)$ и $\nabla_u F_\tau(w, u)$.
+			
+			Заметим, что обращение диагональных матриц $A, B$ не составляет труда. Поэтому сложность данного метода определяется сложностью решения двух линейных систем с матрицами размера $D \times D$: 
+			$$S x_w = d_w, \hspace{0.1cm} S x_u = B A^{-1} du.$$
+			Через решения $x_u, x_v$ этих систем, очередное направление оптимизации, т.е. произведение \ref{primal_direction}, выражается как
+			$$ 
+			\left [
+			\begin{array}[l]{c}
+				x_w - x_u\\
+				-A^{-1} B x_w + A^{-1} du  + A^{-1} Bx_u
+			\end{array}
+			\right ].
+			$$
+	
+	\subsection{Прямо-двойственный метод внутренней точки}
+	
+		Прямо-двойственный метод внутренней точки применяется к задаче \ref{dual}. В этом методе одновременно производится оптимизация как по прямым, так и по двойственным переменным. 
+		Перепишем задачу \ref{dual} в виде 
+		\begin{equation} \label{dual_smooth}
+			\begin{array}[l]{c}
+				\frac 1 2 \mu^T \mu + \mu^T t \rightarrow \min\limits_{\mu}\\
+				X^T \mu \le \lambda \\
+				X^T \mu \ge - \lambda\\
+			\end{array}
+		\end{equation}
+		
+		Рассмотрим возмущенную систему Каруша-Куна-Такера для задачи \ref{dual_smooth}.
+		\begin{equation}\label{KKT}
+		\begin{array}[c]{c}
+			\nabla_\mu(\frac 1 2 \mu^T \mu + \mu^T t + \scalarprod {\gamma^1} {X^T \mu - \lambda} + \scalarprod{\gamma^2}{ - X^T \mu - \lambda }) = \mu + t + X (\gamma^1 - \gamma^2) = 0, \\
+			\gamma^1 \ge 0, \gamma_2 \ge 0, \\
+			\diag(\gamma^1) (X^T \mu - \lambda) = - \frac 1 \tau,\\
+			\diag(\gamma^2) (-X^T \mu - \lambda) = - \frac 1 \tau.
+		\end{array}
+		\end{equation}
+		Здесь $\gamma^1, \gamma^2$ — векторы двойственных переменных. Линеаризованный вариант этой системы имеет вид
+		%\begin{equation}\label{linear_kkt}
+%		\left [
+%		\begin{array}[c]{ccc}
+%			I & X & -X \\
+%			\diag(\gamma_1) X^T & \diag(X^T \mu - \lambda)& 0\\
+%			-\diag(\gamma_2) X^T & 0 & \diag(-X^T \mu - \lambda) 
+%		\end{array}
+%		\right ]
+%		\left [
+%		\begin{array}[c]{c}
+%			d_\mu\\
+%			d_{\gamma_1}\\
+%			d_{\gamma_2}
+%		\end{array}
+%		\right ]
+%		 =
+%		\end{equation}
+%		$$
+%		 = -\left [
+%		\begin{array}{c}
+%			\mu + t + X (\gamma_1 - \gamma_2)\\
+%			\diag(\gamma_1) (X^T \mu - \lambda) + \frac 1 \tau e\\
+%			\diag(\gamma_2) (-X^T \mu - \lambda) + \frac 1 \tau e
+%		\end{array}
+%		\right ] = r(\mu, \gamma_1, \gamma_2),
+%		$$
+		\begin{equation}\label{linear_kkt}
+		\begin{array}[c]{c}
+			\left [
+			\begin{array}[c]{ccc}
+				I & X & -X \\
+				\diag(\gamma^1) X^T & \diag(X^T \mu - \lambda)& 0\\
+				-\diag(\gamma^2) X^T & 0 & \diag(-X^T \mu - \lambda) 
+			\end{array}
+			\right ]
+			\left [
+			\begin{array}[c]{c}
+				d_\mu\\
+				d_{\gamma^1}\\
+				d_{\gamma^2}
+			\end{array}
+			\right ] 
+			=
+		\\
+			= -\left [
+			\begin{array}{c}
+				\mu + t + X (\gamma^1 - \gamma^2)\\
+				\diag(\gamma^1) (X^T \mu - \lambda) + \frac 1 \tau e\\
+				\diag(\gamma^2) (-X^T \mu - \lambda) + \frac 1 \tau e
+			\end{array}
+			\right ] =
+			-\left [
+			\begin{array}{c}
+				r_{dual}(\mu, \gamma^1, \gamma^2)\\
+				r_{center}(\mu, \gamma^1, \gamma^2)
+			\end{array}
+			\right ] 
+			
+			 = -r(\mu, \gamma^1, \gamma^2),
+		\end{array}
+		\end{equation}
+		
+		где $e$ — вектор из единиц. 
+		
+		Решение $d_\mu, d_{\gamma^1}, d_{\gamma^2}$ СЛАУ \ref{linear_kkt} является очередным направлением прямо-двойственного метода. Для выбора длины шага методом backtracking неточно решается задача одномерной минимизации для функции $r$:
+		$$\norm{r(\mu + \alpha d_\mu, \gamma_1 + \alpha d_{\gamma^1}, \gamma^2 + \alpha d_{\gamma^2})} \le 
+		(1 - \alpha \rho) \norm{r(\mu, \gamma^1, \gamma^2)},$$
+		где $\rho$ — параметр, задаваемый пользователем. При выборе начального значения $\alpha$ учитывается, что точка $(\mu + \alpha d_\mu, \gamma^1 + \alpha d_{\gamma^1}, \gamma^2 + \alpha d_{\gamma^2})$  должна быть внутренней.
+	
+		Опишем схему работы метода.
+		\begin{enumerate}
+			\item Выбираем начальное значение $\tau$ и значение параметра $\nu$. Выбираем начальное приближение $\mu_0, \gamma^1_0, \gamma^2_0$, удовлетворяющее условиям 
+			$$ \norm{X^T \mu}_\infty < \lambda,$$
+			$$\gamma^1, \gamma^2 \ge 0.$$
+			Устанавливаем $k = 0$ .
+			
+			\item Для текущего приближения $\mu_k, \gamma^1_k, \gamma^2_k$ решая линейную систему \ref{linear_kkt} находим направление оптимизации $d_k$. Эффективный метод решения этой системы изложен ниже. 
+			
+			\item С помощью процедуры backtracking находим длину шага $\alpha_k$, удовлетворяющую правилу Армихо.
+			
+			\item Обновляем приближение
+			$$
+			\left [
+			\begin{array}[l]{c}
+				\mu_{k+1} \\
+				\gamma^1_{k+1}\\
+				\gamma^2_{k+1}
+			\end{array}
+			\right ] 
+			= 
+			\left [
+			\begin{array}[l]{c}
+				\mu_{k} \\
+				\gamma^1_{k}\\
+				\gamma^2_{k}
+			\end{array}
+			\right ] 
+			 - \alpha_k d_k.$$
+			Увеличиваем значение $k$ на $1$.
+			
+			\item Проверяем условие
+			$$
+			\begin{array}[c]{c}
+				\norm{r_{dual}(\mu_k, \gamma^1_k, \gamma^2_k)} < \varepsilon_{feas},\\
+				-(\gamma^1_k)^T (X^T \mu - \lambda) + (\gamma^2_k)^T (X^T \mu + \lambda) < \varepsilon_{gap}.
+			\end{array}
+			$$
+			Если они выполняются, то устанавливаем $\mu = \mu_k$, вычисляем $w$ исходя из \ref{primaldualvariables}. Иначе увеличиваем $\tau$ в $\nu$ раз и переходим к пункту 2.
+		\end{enumerate}
+		
+		 \subsubsection{Эффективный метод решения системы \ref{linear_kkt}}
+			
+			Перепишем матрицу системы \ref{linear_kkt} в виде
+			$$
+			M =
+			\left [
+			\begin{array}[c]{cc}
+				I & C\\
+				D & E
+			\end{array}
+			\right ],
+			$$
+			где $C = [X, -X]$, $D = [X \mbox{diag}(\gamma^1), - X \diag(\gamma^2)]^T$, $E = \left[\begin{array} [c]{cc}\diag(X^T \mu - \lambda) & 0 \\
+			0 &  \diag(- X^T \mu - \lambda) 
+			\end{array}\right]$.
+			Заметим, что матрицы $I, E$ диагональны. Воспользуемся дополнением по Шуру.
+			$$
+			M^{-1} = 
+			\left [
+			\begin{array}[c]{cc}
+				I & C\\
+				D & E
+			\end{array}
+			\right ]^{-1}
+			=
+			\left [
+			\begin{array}[c]{cc}
+				I + C S^{-1} D& - CS^{-1}\\
+				- S^{-1} D & S^{-1}
+			\end{array}
+			\right ],
+			$$
+			где $S = E - DC$ — дополнение по Шуру $M / E$.
+			
+			Рассмотрим произведение обратной матрицы на правую часть системы. Обозначим $\gamma = \left[\begin{array}[c]{c}\gamma^1\\ \gamma^2\end{array} \right]$, $r_d = r_{dual}(\mu, \gamma)$, $r_c = r_{center}(\mu, \gamma)$. Имеем
+			$$ 
+			\left [
+			\begin{array}[c]{c}
+				d_\mu \\
+				d_\gamma
+			\end{array}
+			\right ]
+			= M^{-1} 
+			\left [
+			\begin{array}[c]{c}
+				r_d \\
+				r_c
+			\end{array}
+			\right ]
+			=
+			\left [
+			\begin{array}[c]{c}
+				r_d + CS^{-1} D r_d - C S^{-1} r_c \\
+				- S^{-1} D r_d + S^{-1} r_c
+			\end{array}
+			\right ].
+			$$
+			Остается найти решения линейных систем $S x_d = D r_d$, $S x_c = r_c$. Решение системы выражается через них следующим образом.
+			$$
+			\left [
+			\begin{array}[c]{c}
+				d_\mu \\
+				d_\gamma
+			\end{array}
+			\right ]
+			=
+			\left [
+			\begin{array}[c]{c}
+				r_d + C x_d - C x_c \\
+				- x_d + x_c
+			\end{array}
+			\right ].
+			$$
+			
+			Таким образом, удалось свести решение исходной системы размеров $(N + 2D) \times (N + 2D)$ к решению двух систем размеров $2 D \times 2 cD$.
+			
+	\subsection{Проксимальный метод}
+	
+	Итерации проксимального метода для негладкой задачи \ref{loss} имеют вид
+	$$w_{k+1} = \arg\min_{w} \left (\norm{t - X w_k}^2  + \partial (\norm{t - X w_k}^2)^T (w - w_k) + \frac L 2 \norm{w - w_k}^2 + \lambda  \norm{w}_1 \right ),$$
+	где $\partial f$ обозначает субградиент функции $f$ (по переменной $w_k$). В данном случае аргументом субградиента является гладкая функция $\norm{t - X w_k}^2$, и он совпадает с градиентом от этой функции.  Исключая слагаемые, не зависящие от $w$, окончательно получаем
+	\begin{equation}\label{proximal}
+		w_{k + 1} = \arg \min_{w} \left( \frac L 2 \scalarprod{w}{w} - L \scalarprod{w}{w_k} +2 \scalarprod{w}{X^T X w_k} - 2 \scalarprod{X^T t}{w} + \lambda \norm{w}_1\right).
+	\end{equation}
+	
+	Заметим, что задача \ref{proximal} является сепарабельной, и соответствующие ей одномерные задачи могут быть записаны как 
+	\begin{equation}\label{proximal1d}
+		\frac L 2 w_d^2 + b_d w_d + \lambda |w_d| \rightarrow \min_{w_d},
+	\end{equation}
+	где $b_d = 2 X^T X w_{k, d} - 2 (X^T t)_d - L w_{k, d}$.
+	
+	Задача \ref{proximal1d} имеет аналитическое решение
+	\begin{equation}\label{proximal_solution}
+		w_d = \left \{
+		\begin{array}[c]{l}
+			\cfrac {-b_d + \sgn(b_d) \lambda}{L}, \mbox{ если } |b_d| > \lambda, \\ 
+			\vspace{0.1cm}\\
+			0, \mbox{если } |b_d| \le \lambda.
+		\end{array}
+		\right.
+	\end{equation}
+	
+	Опишем схему метода.
+	\begin{enumerate}
+		\item Устанавливаем $k = 0$, выбираем начальное приближение $w_0$. Устанавливаем значение параметра $L$.
+		
+		\item Вычисляем вектор $b_k =  2 X^T X w_k - 2 X^T t - L w_k$. Вычисляем новое приближение $w_{k+1}$ исходя из формулы \ref{proximal_solution}. Увеличиваем значение $k$ на 1.
+		
+		\item Проверяем для приближения $w_k$ условие
+		$$\frac 1 2 \norm{t - X w_k}^2 + \lambda \norm{w_k}_1 + \frac 1 2 \hat\mu(w_k)^T \hat\mu(w_k) + \hat\mu(w_k)^T t < \varepsilon_{gap}, $$
+		где $\hat\mu(\cdot)$ — отображение, определенное в \ref{mu}  (см. оценку \ref{estimate}). Если оно выполняется, то устанавливаем $w_{opt} = w_k$ и останавливаем работу метода. Иначе переходим к пункту 2.
+
+	\end{enumerate}
+	
+\section{Эксперименты}
+	
+	В данном разделе приводятся результаты проведенных экспериментов по сравнению трех реализованных методов. Методы сравнивались по скорости сходимости: изучалась зависимость невязки по функции от времени и от номера итерации. Заметим, что прямо-двойственный метод и прямой метод барьеров обладают сверхлинейной скоростью сходимости, поэтому по итерациям они обычно работают существенно лучше проксимального метода. Однако итерации проксимального метода проще, и выполняются на компьютере быстрее, поэтому нас в первую очередь будет интересовать именно сравнение по времени работы.
+	
+	В проксимальном методе скорость сходимости (и вообще наличие сходимости) зависит от выбора параметра $L$. Во всех экспериментах этот параметр подбирался опытным путем, чтобы добиться оптимальной работы метода. 
+	
+	\subsection{Небольшие задачи}
+	
+	В данном разделе приводятся результаты работы методов на наборах данных abalone и bodyfat.
+	
+	Набор данных bodyfat состоит из $252$ объектов с $14$ признаками. Набор данных abalone содержит $4177$ объектов с 8 признаками. 
+	
+	Результаты работы методов по итерациям приведены на рис. \ref{small}. Видно, что в обоих случаях методы внутренней точки показали близкие результаты, а проксимальный метод показал значительно худший результат.
+
+	\begin{figure}[!h]
+		\centering
+		\subfloat{
+			\scalebox{0.9}{
+				\input{Plots/bodyfat.tikz}
+			}
+		}
+		\subfloat{\
+			\scalebox{0.9}{
+	                		\input{Plots/abalone.tikz}
+			}
+		}
+		\caption{Сравнение методов по итерациям на небольшой задаче.}
+		\label{small}
+	\end{figure}
+
+	Графики работы методов по времени приведены на рисунке \ref{small_t}. Видно, что проксимальный метод за счет более быстрых итераций обгоняет другие методы на ранних итерациях. Также видно, что по времени методы внутренней точки показали разные результаты.  На наборе данных abalone прямо-двойственный метод существенно проиграл по времени прямому методу логарифмических барьеров, а на наборе bodyfat — выиграл. Это можно объяснить тем, что соотношение числа признаков и числа объектов в этих задачах существенно различается. Размерность задачи, решаемой в прямом методе для набора данных abalone составляет $8$, в то время как размерность задачи прямо-двойственного метода — $4193$.
+	
+	\begin{figure}[!h]
+		\centering
+		\subfloat{
+			\scalebox{0.9}{
+				\input{Plots/bodyfat_t.tikz}
+			}
+		}
+		\subfloat{\
+			\scalebox{0.9}{
+	                		\input{Plots/abalone_t.tikz}
+			}
+		}
+		\caption{Сравнение методов по времени на небольшой задаче.}
+		\label{small_t}
+	\end{figure}
+
+	\subsection{Задачи средних размеров}
+	
+	В данном разделе приводятся результаты работы методов на наборе данных cpusmall, состоящем из $8192$ объектов с $12$ признаками.  Результаты работы методов приведены на рис. \ref{mid}.
+	
+	\begin{figure}[!h]
+		\centering
+		\subfloat{
+			\scalebox{0.9}{
+				\input{Plots/cpusmall.tikz}
+			}
+		}
+		\subfloat{\
+			\scalebox{0.9}{
+	                		\input{Plots/cpusmall_t.tikz}
+			}
+		}
+		\caption{Сравнение методов на задаче средних размеров.}
+		\label{mid}
+	\end{figure}
+	
+	Видно, что прямой метод логарифмических барьеров вновь оказался лучше других методов по времени. Проксимальный метод опережает другие методы на ранних итерациях, но вскоре начинает уступать им. Прямо-двойственный метод уступает прямому методу как по итерациям, так и по времени.
+	
+\section{Выводы}
+
+	По результатам проведенных экспериментов можно сделать ряд выводов. 
+	
+	Во-первых, проксимальный метод для задачи $L_1$-регуляризованной линейной регрессии имеет смысл использовать только в том случае, когда использование методов внутренней точки невозможно (например, из-за того, что их итерации становятся слишком долгими при больших размерах данных), либо если есть возможность сделать всего одну-две итерации этих методов.
+	
+	Во-вторых, прямо-двойственный метод может работать лучше прямого метода барьерных функций для задач, в которых размерность признакового пространства сравнима с размером выборки. Если же размер выборки намного больше размерности признакового пространства, то имеет смысл использовать прямой метод. 
+	
+	
+\end{document}
